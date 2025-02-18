@@ -2,14 +2,6 @@ import { db } from "../db/config";
 import { eq } from "drizzle-orm";
 import { positions } from "../models/positions";
 
-interface Position {
-  id: number;
-  name: string;
-  description: string;
-  parentid: number | null;
-  children: Position[];
-}
-
 export class PositionNotFoundError extends Error {
   constructor(message: string) {
     super(message);
@@ -41,7 +33,7 @@ export const getHierarchy = async () => {
   return allPositions;
 };
 
-export const getPositionById = async (id: string) => {
+export const getPositionById = async (id: number) => {
   const [position] = await db
     .select()
     .from(positions)

@@ -2,7 +2,7 @@ import axios from "axios";
 import { formData } from "@/types/position";
 
 const API = axios.create({
-  baseURL: "http://localhost:4000/",
+  baseURL: "http://localhost:4001/",
 });
 
 export const getAllPosition = async () => {

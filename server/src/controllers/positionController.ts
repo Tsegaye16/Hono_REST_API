@@ -43,7 +43,7 @@ export const getPositionByIdHandler = async (ctx: Context) => {
   }
 
   try {
-    const position = await getPositionById(id);
+    const position = await getPositionById(parseInt(id, 10));
     if (!position) {
       return ctx.json({ error: "Position not found" }, 404);
     }

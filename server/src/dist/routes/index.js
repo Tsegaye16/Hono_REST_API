@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const hono_1 = require("hono");
+const positionController_1 = require("../controllers/positionController");
+const route = new hono_1.Hono();
+route.post("/positions", positionController_1.createPositionHandler);
+route.get("/positions", positionController_1.getHierarchyHandler);
+route.get("/positions/:id", positionController_1.getPositionByIdHandler);
+route.delete("/positions/:id", positionController_1.deletePositionHandler);
+route.put("/positions/:id", positionController_1.updatePositionHandler);
+exports.default = route;

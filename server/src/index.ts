@@ -19,6 +19,6 @@ app.use("*", async (c, next) => {
 
 app.route("/", route);
 // Start the server on port 3000
-serve({ fetch: app.fetch, port: 4000 });
+serve({ fetch: app.fetch, port: 4001 });
 
-console.log("Server is running on http://localhost:4000");
+console.log("Server is running on http://localhost:4001");
