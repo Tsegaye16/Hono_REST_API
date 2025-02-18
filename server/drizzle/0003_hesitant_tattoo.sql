@@ -1,0 +1,1 @@
+ALTER TABLE "positions" ALTER COLUMN "parentid" DROP DEFAULT;
