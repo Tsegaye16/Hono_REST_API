@@ -1,14 +1,37 @@
 ---
 
+# Front-end setup
+
+1. Clone the repository
+
+```sh
+git clone https://github.com/Tsegaye16/Hono_REST_API && cd Hono_REST_API\client
+```
+
+2.Install dependencies:
+
+```sh
+npm install
+```
+
+3.start the app
+
+```sh
+npm run dev
+```
+
 # Backend Setup
 
 ## Installation
 
 1. Clone the repository:
+
    ```sh
    git clone https://github.com/Tsegaye16/Hono_REST_API && cd Hono_REST_API\server\src
    ```
+
 2. Install dependencies:
+
    ```sh
    npm install
    ```
@@ -16,14 +39,19 @@
 ## Build and Run with Docker
 
 1. Build the Docker image:
+
    ```sh
    docker-compose up --build
    ```
+
 2. Start the containers:
+
    ```sh
    docker-compose up
    ```
+
 3. Check running containers:
+
    ```sh
    docker ps
    ```
