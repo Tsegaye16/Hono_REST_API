@@ -5,6 +5,7 @@ import {
   getHierarchy,
   getPositionById,
   PositionNotFoundError,
+  searchPositions,
   updatePosition,
 } from "../services/positionService";
 
@@ -27,6 +28,7 @@ export const createPositionHandler = async (ctx: Context) => {
 
 export const getHierarchyHandler = async (ctx: Context) => {
   try {
+    console.log("sample logging");
     const positions = await getHierarchy();
     return ctx.json(positions);
   } catch (error: any) {
@@ -35,6 +37,7 @@ export const getHierarchyHandler = async (ctx: Context) => {
 };
 
 export const getPositionByIdHandler = async (ctx: Context) => {
+  console.log("good bel");
   const id = ctx.req.param("id");
 
   // Validate ID
@@ -81,6 +84,26 @@ export const updatePositionHandler = async (ctx: Context) => {
     const updatedPosition = await updatePosition(id, position);
     return ctx.json(updatedPosition);
   } catch (error: any) {
+    return ctx.json({ error: error.message }, 500);
+  }
+};
+
+export const searchPositionsHandler = async (ctx: Context) => {
+  console.log("Searching positions...");
+  const query = ctx.req.query("q"); // Get search query parameter
+
+  if (!query || query.trim() === "") {
+    return ctx.json({ error: "Search query is required" }, 400);
+  }
+
+  try {
+    const results = await searchPositions(query);
+    return ctx.json(results);
+  } catch (error: any) {
+    console.log("error");
+    if (error instanceof PositionNotFoundError) {
+      return ctx.json({ error: error.message }, 404);
+    }
     return ctx.json({ error: error.message }, 500);
   }
 };

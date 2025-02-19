@@ -12,7 +12,7 @@ function App({ Component, pageProps }: AppProps) {
   return (
     <MantineProvider>
       <Provider store={store}>
-        <PersistGate loading={null} persistor={persistor}>
+        <PersistGate loading={<div>Loading...</div>} persistor={persistor}>
           <Layout>
             <Component {...pageProps} />
           </Layout>

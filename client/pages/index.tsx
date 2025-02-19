@@ -13,7 +13,7 @@ export default function Home() {
     (state: RootState) => state.position
   );
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const addFormPopoverRef = useRef<HTMLDivElement | null>(null); // ✅ Fix: Create a ref
+  const addFormPopoverRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     dispatch(getPosition());

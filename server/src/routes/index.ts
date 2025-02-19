@@ -4,11 +4,13 @@ import {
   deletePositionHandler,
   getHierarchyHandler,
   getPositionByIdHandler,
+  searchPositionsHandler,
   updatePositionHandler,
 } from "../controllers/positionController";
 
 const route = new Hono();
 
+route.get("/positions/search", searchPositionsHandler);
 route.post("/positions", createPositionHandler);
 route.get("/positions", getHierarchyHandler);
 route.get("/positions/:id", getPositionByIdHandler);

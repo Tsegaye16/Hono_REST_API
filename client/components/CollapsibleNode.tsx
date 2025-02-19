@@ -18,7 +18,6 @@ const CollapsibleNode: React.FC<CollapsibleNodeProps> = ({ position }) => {
   const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [isUpdateFormOpen, setIsUpdateFormOpen] = useState(false);
   const [initialFormData, setInitialFormData] = useState({});
-  //const [parentName, setParentName] = useState("");
 
   const dispatch = useDispatch<AppDispatch>();
   const optionsPopoverRef = useRef<HTMLDivElement>(null);
@@ -43,7 +42,6 @@ const CollapsibleNode: React.FC<CollapsibleNodeProps> = ({ position }) => {
       description: position.description,
       parentName: getParentName(position),
     });
-    //setParentName(getParentName(position));
   };
 
   const getParentName = (pos: Position) => {
