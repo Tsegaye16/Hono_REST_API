@@ -132,19 +132,23 @@ const CollapsibleNode: React.FC<CollapsibleNodeProps> = ({ position }) => {
           </span>
         )}
       </div>
+      {/* Connector line to children */}
       {position.children && position.children.length > 0 && isExpanded && (
         <div className="flex justify-center items-start mt-3">
           <div className="w-0.5 bg-gray-400 h-6 sm:h-8 z-10"></div>
         </div>
       )}
+      {/* Render children if expanded */}
       {position.children && position.children.length > 0 && isExpanded && (
         <div className="flex items-start justify-center mt-2 relative">
+          {/* Horizontal line to devide the level of the position */}
           <div className="absolute top-0 left-0 right-0 h-0.5 bg-gray-400 z-0"></div>
           {position.children?.map((child) => (
             <div
               key={child.id}
               className="flex flex-col items-center mx-2 sm:mx-4 z-0"
             >
+              {/* Horizontal lebel holder */}
               <div className="w-0.5 bg-gray-400 h-6 sm:h-8 z-0"></div>
               <CollapsibleNode position={child} />
             </div>

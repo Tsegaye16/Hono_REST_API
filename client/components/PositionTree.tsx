@@ -1,7 +1,6 @@
 import React from "react";
 import { Position } from "@/types/position";
 import CollapsibleNode from "./CollapsibleNode";
-//import CollapsibleNode from "./CollapsibleNode";
 
 interface PositionTreeProps {
   positions: Position[];

@@ -12,7 +12,7 @@ const persistConfig = {
   whitelist: ["positions"], // Persist only the positions slice
 };
 
-// Combine reducers (useful if you add more slices later)
+// Combine reducers (useful if needed to add more slices later)
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
 export const makeStore = () =>

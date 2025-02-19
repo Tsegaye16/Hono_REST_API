@@ -2,7 +2,6 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { positions } from "../models/positions";
 import dotenv from "dotenv";
-import { pgTable, serial, varchar, text, integer } from "drizzle-orm/pg-core";
 
 dotenv.config();
 
@@ -34,5 +33,4 @@ async function createTableIfNotExists() {
 // Run the function to ensure the table is created on startup
 createTableIfNotExists();
 
-// You can also add your other application logic here, like starting the server, etc.
 export { db };
