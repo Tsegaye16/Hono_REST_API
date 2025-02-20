@@ -30,9 +30,11 @@ const buildHierarchy = (allPositions, rootId = null) => {
     // Add children to their respective parents
     allPositions.forEach((position) => {
         if (position.parentid) {
-            const parent = positionMap.get(position.parentid);
+            // Check if this position has a parent
+            const parent = positionMap.get(position.parentid); // Find the parent in the map
             if (parent) {
-                parent.children.push(positionMap.get(position.id));
+                // If the parent exists
+                parent.children.push(positionMap.get(position.id)); // Add the current position as a child
             }
         }
     });
@@ -108,19 +110,22 @@ const updatePosition = (id, data) => __awaiter(void 0, void 0, void 0, function*
 });
 exports.updatePosition = updatePosition;
 const searchPositions = (query) => __awaiter(void 0, void 0, void 0, function* () {
+    // Fetch positions that match the query
     const matchingPositions = yield config_1.db
         .select()
         .from(positions_1.positions)
         .where((0, drizzle_orm_1.like)(positions_1.positions.name, `%${query}%`));
     if (matchingPositions.length === 0) {
-        return [];
+        return []; // Return empty array if no matches are found
     }
-    // Fetch all positions and build their hierarchy
+    // Fetch all positions to build hierarchies
     const allPositions = yield config_1.db.select().from(positions_1.positions);
+    // Build hierarchies for each matching position
     const positionTrees = matchingPositions.map((pos) => {
         const positionTree = buildHierarchy(allPositions, pos.parentid);
         return positionTree.find((position) => position.id === pos.id);
     });
+    // Filter out undefined results and return the list of hierarchies
     return positionTrees.filter((position) => position !== undefined);
 });
 exports.searchPositions = searchPositions;
