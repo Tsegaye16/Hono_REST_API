@@ -1,24 +1,29 @@
-import { Hono } from "hono";
-import { serve } from "@hono/node-server";
 import route from "./routes";
-const app = new Hono();
+import { serve } from "@hono/node-server";
+import { swaggerUI } from "@hono/swagger-ui";
+import { OpenAPIHono } from "@hono/zod-openapi";
 
-// CORS middleware
-app.use("*", async (c, next) => {
-  c.header("Access-Control-Allow-Origin", "*"); // Allow all origins
-  c.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS"); // Allowed methods
-  c.header("Access-Control-Allow-Headers", "Content-Type, Authorization"); // Allowed headers
+const app = new OpenAPIHono();
 
-  // Handle preflight requests
-  if (c.req.method === "OPTIONS") {
-    return c.text("OK", 200); // Respond with 200 OK for OPTIONS requests
-  }
+// Register the route
+app.route("/", route);
 
-  await next(); // Proceed to the next middleware or route
+// OpenAPI JSON document
+app.doc("/doc", {
+  openapi: "3.0.0",
+  info: {
+    version: "1.0.0",
+    title: "My API",
+  },
 });
 
-app.route("/", route);
-// Start the server on port 3000
-serve({ fetch: app.fetch, port: 4001 });
+// Swagger UI
+app.get("/ui", swaggerUI({ url: "/doc" }));
 
-console.log("Server is running on http://localhost:4001");
+const port = 3000;
+console.log(`Server is running on port ${port}`);
+
+serve({
+  fetch: app.fetch,
+  port,
+});
