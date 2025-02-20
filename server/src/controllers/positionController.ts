@@ -28,16 +28,14 @@ export const createPositionHandler = async (ctx: Context) => {
 
 export const getHierarchyHandler = async (ctx: Context) => {
   try {
-    console.log("sample logging");
     const positions = await getHierarchy();
-    return ctx.json(positions);
+    return ctx.json(positions, 200); // Explicitly set status code to 200
   } catch (error: any) {
     return ctx.json({ error: error.message }, 500);
   }
 };
 
 export const getPositionByIdHandler = async (ctx: Context) => {
-  console.log("good bel");
   const id = ctx.req.param("id");
 
   // Validate ID
@@ -89,7 +87,6 @@ export const updatePositionHandler = async (ctx: Context) => {
 };
 
 export const searchPositionsHandler = async (ctx: Context) => {
-  console.log("Searching positions...");
   const query = ctx.req.query("q"); // Get search query parameter
 
   if (!query || query.trim() === "") {
@@ -98,12 +95,9 @@ export const searchPositionsHandler = async (ctx: Context) => {
 
   try {
     const results = await searchPositions(query);
-    return ctx.json(results);
+    return ctx.json(results, 200);
   } catch (error: any) {
-    console.log("error");
-    if (error instanceof PositionNotFoundError) {
-      return ctx.json({ error: error.message }, 404);
-    }
+    console.error("Error searching positions:", error);
     return ctx.json({ error: error.message }, 500);
   }
 };
