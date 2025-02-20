@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updatePositionHandler = exports.deletePositionHandler = exports.getPositionByIdHandler = exports.getHierarchyHandler = exports.createPositionHandler = void 0;
+exports.searchPositionsHandler = exports.updatePositionHandler = exports.deletePositionHandler = exports.getPositionByIdHandler = exports.getHierarchyHandler = exports.createPositionHandler = void 0;
 const positionService_1 = require("../services/positionService");
 const createPositionHandler = (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, description, parentid } = yield ctx.req.json();
@@ -29,7 +29,7 @@ exports.createPositionHandler = createPositionHandler;
 const getHierarchyHandler = (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const positions = yield (0, positionService_1.getHierarchy)();
-        return ctx.json(positions);
+        return ctx.json(positions, 200); // Explicitly set status code to 200
     }
     catch (error) {
         return ctx.json({ error: error.message }, 500);
@@ -86,3 +86,18 @@ const updatePositionHandler = (ctx) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.updatePositionHandler = updatePositionHandler;
+const searchPositionsHandler = (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+    const query = ctx.req.query("q"); // Get search query parameter
+    if (!query || query.trim() === "") {
+        return ctx.json({ error: "Search query is required" }, 400);
+    }
+    try {
+        const results = yield (0, positionService_1.searchPositions)(query);
+        return ctx.json(results, 200);
+    }
+    catch (error) {
+        console.error("Error searching positions:", error);
+        return ctx.json({ error: error.message }, 500);
+    }
+});
+exports.searchPositionsHandler = searchPositionsHandler;

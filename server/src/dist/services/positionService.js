@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updatePosition = exports.deletePosition = exports.getPositionById = exports.getHierarchy = exports.createPosition = exports.PositionNotFoundError = void 0;
+exports.searchPositions = exports.updatePosition = exports.deletePosition = exports.getPositionById = exports.getHierarchy = exports.createPosition = exports.PositionNotFoundError = void 0;
 const config_1 = require("../db/config");
 const drizzle_orm_1 = require("drizzle-orm");
 const positions_1 = require("../models/positions");
@@ -20,6 +20,27 @@ class PositionNotFoundError extends Error {
     }
 }
 exports.PositionNotFoundError = PositionNotFoundError;
+// Helper function to build the hierarchy (handles both full hierarchy and individual trees)
+const buildHierarchy = (allPositions, rootId = null) => {
+    const positionMap = new Map();
+    // Build a map of positions with an empty children array
+    allPositions.forEach((position) => {
+        positionMap.set(position.id, Object.assign(Object.assign({}, position), { children: [] }));
+    });
+    // Add children to their respective parents
+    allPositions.forEach((position) => {
+        if (position.parentid) {
+            const parent = positionMap.get(position.parentid);
+            if (parent) {
+                parent.children.push(positionMap.get(position.id));
+            }
+        }
+    });
+    // Return either the full tree or the subtree from the given rootId
+    return allPositions
+        .filter((position) => position.parentid === rootId)
+        .map((root) => positionMap.get(root.id));
+};
 const createPosition = (name, description, parentid) => __awaiter(void 0, void 0, void 0, function* () {
     if (!name || !description) {
         throw new Error("Name and description are required");
@@ -31,11 +52,9 @@ const createPosition = (name, description, parentid) => __awaiter(void 0, void 0
 });
 exports.createPosition = createPosition;
 const getHierarchy = () => __awaiter(void 0, void 0, void 0, function* () {
+    // Explicitly type the query result as Position[]
     const allPositions = yield config_1.db.select().from(positions_1.positions);
-    if (!allPositions) {
-        throw new PositionNotFoundError("No positions found");
-    }
-    return allPositions;
+    return buildHierarchy(allPositions);
 });
 exports.getHierarchy = getHierarchy;
 const getPositionById = (id) => __awaiter(void 0, void 0, void 0, function* () {
@@ -46,48 +65,41 @@ const getPositionById = (id) => __awaiter(void 0, void 0, void 0, function* () {
     if (!position) {
         throw new PositionNotFoundError("Position not found");
     }
-    return position;
+    // Fetch all positions and build the hierarchy
+    const allPositions = yield config_1.db.select().from(positions_1.positions);
+    const positionTree = buildHierarchy(allPositions, position.parentid);
+    // Ensure the requested position exists in the hierarchy
+    const foundPosition = positionTree.find((pos) => pos.id === id);
+    if (!foundPosition) {
+        throw new PositionNotFoundError("Position not found in hierarchy");
+    }
+    return foundPosition;
 });
 exports.getPositionById = getPositionById;
 const deletePosition = (id) => __awaiter(void 0, void 0, void 0, function* () {
-    // Fetch the node to be deleted along with its parentid
     const nodeToDelete = yield config_1.db
         .select({ id: positions_1.positions.id, parentid: positions_1.positions.parentid })
         .from(positions_1.positions)
         .where((0, drizzle_orm_1.eq)(positions_1.positions.id, id))
         .limit(1);
-    // If the node doesn't exist, throw an error
     if (!nodeToDelete.length) {
         throw new PositionNotFoundError("Position not found");
     }
     const { id: deletedId, parentid: deletedParentId } = nodeToDelete[0];
-    // Check if the node has children
     const children = yield config_1.db
         .select({ id: positions_1.positions.id })
         .from(positions_1.positions)
         .where((0, drizzle_orm_1.eq)(positions_1.positions.parentid, deletedId));
-    // Handle children based on the scenarios
+    // Update children's parentid if necessary
     if (children.length > 0) {
-        if (!deletedParentId) {
-            // Scenario 1: Deleted node has no parent but has children
-            // Set the parentid of each child to null
-            yield config_1.db
-                .update(positions_1.positions)
-                .set({ parentid: null })
-                .where((0, drizzle_orm_1.eq)(positions_1.positions.parentid, deletedId));
-        }
-        else {
-            // Scenario 2: Deleted node has both a parent and children
-            // Set the parentid of each child to the parentid of the deleted node
-            yield config_1.db
-                .update(positions_1.positions)
-                .set({ parentid: deletedParentId })
-                .where((0, drizzle_orm_1.eq)(positions_1.positions.parentid, deletedId));
-        }
+        const updateParentId = deletedParentId !== null && deletedParentId !== void 0 ? deletedParentId : null;
+        yield config_1.db
+            .update(positions_1.positions)
+            .set({ parentid: updateParentId })
+            .where((0, drizzle_orm_1.eq)(positions_1.positions.parentid, deletedId));
     }
-    // Delete the node after updating its children
+    // Delete the position
     yield config_1.db.delete(positions_1.positions).where((0, drizzle_orm_1.eq)(positions_1.positions.id, deletedId));
-    // Return the deleted ID
     return deletedId;
 });
 exports.deletePosition = deletePosition;
@@ -95,3 +107,20 @@ const updatePosition = (id, data) => __awaiter(void 0, void 0, void 0, function*
     return config_1.db.update(positions_1.positions).set(data).where((0, drizzle_orm_1.eq)(positions_1.positions.id, id)).returning();
 });
 exports.updatePosition = updatePosition;
+const searchPositions = (query) => __awaiter(void 0, void 0, void 0, function* () {
+    const matchingPositions = yield config_1.db
+        .select()
+        .from(positions_1.positions)
+        .where((0, drizzle_orm_1.like)(positions_1.positions.name, `%${query}%`));
+    if (matchingPositions.length === 0) {
+        return [];
+    }
+    // Fetch all positions and build their hierarchy
+    const allPositions = yield config_1.db.select().from(positions_1.positions);
+    const positionTrees = matchingPositions.map((pos) => {
+        const positionTree = buildHierarchy(allPositions, pos.parentid);
+        return positionTree.find((position) => position.id === pos.id);
+    });
+    return positionTrees.filter((position) => position !== undefined);
+});
+exports.searchPositions = searchPositions;

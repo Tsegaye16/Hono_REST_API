@@ -20,7 +20,7 @@ app.doc("/doc", {
 // Swagger UI
 app.get("/ui", swaggerUI({ url: "/doc" }));
 
-const port = 3000;
+const port = 4001;
 console.log(`Server is running on port ${port}`);
 
 serve({
