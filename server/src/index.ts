@@ -2,8 +2,18 @@ import route from "./routes";
 import { serve } from "@hono/node-server";
 import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
+import { rateLimiter } from "hono-rate-limiter";
 
 const app = new OpenAPIHono();
+
+app.use(
+  rateLimiter({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes).
+    standardHeaders: "draft-6", // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
+    keyGenerator: (c: any) => c.ip, // Generate custom keys based on client IP
+  })
+);
 
 // Register the route
 app.route("/", route);

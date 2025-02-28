@@ -12,7 +12,7 @@ const PositionSchema = zod_1.z.object({
     parentid: zod_1.z.number().nullable(),
 });
 // Get Hierarchy with optional search, limit, and page parameters
-const hierarchyRoute = (0, zod_openapi_1.createRoute)({
+const getHierarchyRoute = (0, zod_openapi_1.createRoute)({
     method: "get",
     path: "/positions",
     request: {
@@ -43,9 +43,9 @@ const hierarchyRoute = (0, zod_openapi_1.createRoute)({
         },
     },
 });
-route.openapi(hierarchyRoute, positionController_1.getHierarchyHandler);
+route.openapi(getHierarchyRoute, positionController_1.getHierarchyHandler);
 // Create Position
-const createRouteSpec = (0, zod_openapi_1.createRoute)({
+const createHierarchyRoute = (0, zod_openapi_1.createRoute)({
     method: "post",
     path: "/positions",
     request: {
@@ -75,7 +75,7 @@ const createRouteSpec = (0, zod_openapi_1.createRoute)({
         },
     },
 });
-route.openapi(createRouteSpec, positionController_1.createPositionHandler);
+route.openapi(createHierarchyRoute, positionController_1.createPositionHandler);
 // Get Position by ID
 const getByIdRoute = (0, zod_openapi_1.createRoute)({
     method: "get",

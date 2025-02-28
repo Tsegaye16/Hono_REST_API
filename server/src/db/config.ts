@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.LOCAL_DATABASE_URL,
 });
 
 const db = drizzle(pool, { schema: { positions } });
