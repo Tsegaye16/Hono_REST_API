@@ -11,31 +11,23 @@ const PositionSchema = zod_1.z.object({
     description: zod_1.z.string(),
     parentid: zod_1.z.number().nullable(),
 });
-// Search Positions
-const searchRoute = (0, zod_openapi_1.createRoute)({
+// Get Hierarchy with optional search, limit, and page parameters
+const hierarchyRoute = (0, zod_openapi_1.createRoute)({
     method: "get",
-    path: "/positions/search",
+    path: "/positions",
     request: {
         query: zod_1.z.object({
-            q: zod_1.z.string().min(1, "Search query is required"),
+            search: zod_1.z.string().optional(),
+            limit: zod_1.z.string().optional(),
+            page: zod_1.z.string().optional(),
         }),
     },
     responses: {
         200: {
-            description: "List of positions matching the search query",
+            description: "List of positions in hierarchy",
             content: {
                 "application/json": {
                     schema: zod_1.z.array(PositionSchema),
-                },
-            },
-        },
-        400: {
-            description: "Bad Request - Search query is required",
-            content: {
-                "application/json": {
-                    schema: zod_1.z.object({
-                        error: zod_1.z.string(),
-                    }),
                 },
             },
         },
@@ -51,7 +43,7 @@ const searchRoute = (0, zod_openapi_1.createRoute)({
         },
     },
 });
-route.openapi(searchRoute, positionController_1.searchPositionsHandler);
+route.openapi(hierarchyRoute, positionController_1.getHierarchyHandler);
 // Create Position
 const createRouteSpec = (0, zod_openapi_1.createRoute)({
     method: "post",
@@ -84,32 +76,6 @@ const createRouteSpec = (0, zod_openapi_1.createRoute)({
     },
 });
 route.openapi(createRouteSpec, positionController_1.createPositionHandler);
-// Get Hierarchy
-const hierarchyRoute = (0, zod_openapi_1.createRoute)({
-    method: "get",
-    path: "/positions",
-    responses: {
-        200: {
-            description: "List of positions in hierarchy",
-            content: {
-                "application/json": {
-                    schema: zod_1.z.array(PositionSchema),
-                },
-            },
-        },
-        500: {
-            description: "Internal Server Error",
-            content: {
-                "application/json": {
-                    schema: zod_1.z.object({
-                        error: zod_1.z.string(),
-                    }),
-                },
-            },
-        },
-    },
-});
-route.openapi(hierarchyRoute, positionController_1.getHierarchyHandler);
 // Get Position by ID
 const getByIdRoute = (0, zod_openapi_1.createRoute)({
     method: "get",

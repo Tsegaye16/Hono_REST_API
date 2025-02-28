@@ -24,27 +24,64 @@ const buildHierarchy = (
 ): Position[] => {
   const positionMap = new Map<number, Position>();
 
-  // Build a map of positions with an empty children array
   allPositions.forEach((position) => {
     positionMap.set(position.id, { ...position, children: [] });
   });
 
-  // Add children to their respective parents
   allPositions.forEach((position) => {
     if (position.parentid) {
-      // Check if this position has a parent
-      const parent = positionMap.get(position.parentid); // Find the parent in the map
+      const parent = positionMap.get(position.parentid);
       if (parent) {
-        // If the parent exists
-        parent.children.push(positionMap.get(position.id)!); // Add the current position as a child
+        parent.children.push(positionMap.get(position.id)!);
       }
     }
   });
 
-  // Return either the full tree or the subtree from the given rootId
   return allPositions
     .filter((position) => position.parentid === rootId)
     .map((root) => positionMap.get(root.id)!);
+};
+
+export const getHierarchy = async (
+  search?: string,
+  limit?: number,
+  page?: number
+): Promise<Position[]> => {
+  let query: any = db.select().from(positions);
+
+  if (search) {
+    // Find positions matching the search term
+    const matchingPositions = await db
+      .select()
+      .from(positions)
+      .where(like(positions.name, `%${search}%`));
+
+    if (matchingPositions.length === 0) {
+      return []; // Return an empty array if no matches are found
+    }
+
+    // Fetch all positions to identify parents & children
+    const allPositions: any = await db.select().from(positions);
+
+    // Build hierarchies for each matching position
+    const positionTrees = matchingPositions.map((pos) => {
+      const positionTree = buildHierarchy(allPositions, pos.parentid);
+      return positionTree.find((position) => position.id === pos.id);
+    });
+
+    // Filter out undefined results and return the list of hierarchies
+    return positionTrees.filter(
+      (position) => position !== undefined
+    ) as Position[];
+  }
+
+  // Apply pagination if no search term is used
+  if (limit && page) {
+    query = query.limit(limit).offset((page - 1) * limit);
+  }
+
+  const allPositions: Position[] = await query;
+  return buildHierarchy(allPositions) as Position[];
 };
 
 export const createPosition = async (
@@ -60,12 +97,6 @@ export const createPosition = async (
     .insert(positions)
     .values({ name, description, parentid })
     .returning();
-};
-
-export const getHierarchy = async (): Promise<Position[]> => {
-  // Explicitly type the query result as Position[]
-  const allPositions: any = await db.select().from(positions);
-  return buildHierarchy(allPositions);
 };
 
 export const getPositionById = async (id: number): Promise<Position> => {
@@ -128,30 +159,4 @@ export const updatePosition = async (
   data: { name?: string; description?: string; parentid?: number | null }
 ) => {
   return db.update(positions).set(data).where(eq(positions.id, id)).returning();
-};
-
-export const searchPositions = async (query: string): Promise<Position[]> => {
-  // Fetch positions that match the query
-  const matchingPositions = await db
-    .select()
-    .from(positions)
-    .where(like(positions.name, `%${query}%`));
-
-  if (matchingPositions.length === 0) {
-    return []; // Return empty array if no matches are found
-  }
-
-  // Fetch all positions to build hierarchies
-  const allPositions: any = await db.select().from(positions);
-
-  // Build hierarchies for each matching position
-  const positionTrees = matchingPositions.map((pos) => {
-    const positionTree = buildHierarchy(allPositions, pos.parentid);
-    return positionTree.find((position) => position.id === pos.id);
-  });
-
-  // Filter out undefined results and return the list of hierarchies
-  return positionTrees.filter(
-    (position) => position !== undefined
-  ) as Position[];
 };
