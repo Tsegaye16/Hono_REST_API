@@ -3,9 +3,21 @@ import { serve } from "@hono/node-server";
 import { swaggerUI } from "@hono/swagger-ui";
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { rateLimiter } from "hono-rate-limiter";
+import { cors } from "hono/cors";
 
 const app = new OpenAPIHono();
 
+app.use(
+  "/*",
+  cors({
+    origin: "http://localhost:3000",
+    allowHeaders: ["X-Custom-Header", "Upgrade-Insecure-Requests"],
+    allowMethods: ["POST", "GET", "DELETE", "PUT", "OPTIONS"],
+    exposeHeaders: ["Content-Length", "X-Kuma-Revision"],
+    maxAge: 600,
+    credentials: true,
+  })
+);
 app.use(
   rateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes

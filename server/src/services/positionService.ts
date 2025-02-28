@@ -17,7 +17,7 @@ export class PositionNotFoundError extends Error {
   }
 }
 
-// Helper function to build the hierarchy (handles both full hierarchy and individual trees)
+// Helper function to build the hierarchy
 const buildHierarchy = (
   allPositions: Position[],
   rootId: number | null = null
@@ -29,7 +29,7 @@ const buildHierarchy = (
   });
 
   allPositions.forEach((position) => {
-    if (position.parentid) {
+    if (position.parentid !== null) {
       const parent = positionMap.get(position.parentid);
       if (parent) {
         parent.children.push(positionMap.get(position.id)!);
@@ -47,41 +47,33 @@ export const getHierarchy = async (
   limit?: number,
   page?: number
 ): Promise<Position[]> => {
-  let query: any = db.select().from(positions);
+  const allPositions: any = await db.select().from(positions);
 
   if (search) {
-    // Find positions matching the search term
-    const matchingPositions = await db
-      .select()
-      .from(positions)
-      .where(like(positions.name, `%${search}%`));
+    const matchingPositions = allPositions.filter((pos: any) =>
+      pos.name.includes(search)
+    );
 
     if (matchingPositions.length === 0) {
-      return []; // Return an empty array if no matches are found
+      return [];
     }
 
-    // Fetch all positions to identify parents & children
-    const allPositions: any = await db.select().from(positions);
-
-    // Build hierarchies for each matching position
-    const positionTrees = matchingPositions.map((pos) => {
+    const positionTrees = matchingPositions.map((pos: Position) => {
       const positionTree = buildHierarchy(allPositions, pos.parentid);
       return positionTree.find((position) => position.id === pos.id);
     });
 
-    // Filter out undefined results and return the list of hierarchies
     return positionTrees.filter(
-      (position) => position !== undefined
+      (position: Position[]) => position !== undefined
     ) as Position[];
   }
 
-  // Apply pagination if no search term is used
-  if (limit && page) {
-    query = query.limit(limit).offset((page - 1) * limit);
-  }
+  const paginatedPositions =
+    limit && page
+      ? allPositions.slice((page - 1) * limit, page * limit)
+      : allPositions;
 
-  const allPositions: Position[] = await query;
-  return buildHierarchy(allPositions) as Position[];
+  return buildHierarchy(paginatedPositions) as Position[];
 };
 
 export const createPosition = async (
@@ -100,21 +92,16 @@ export const createPosition = async (
 };
 
 export const getPositionById = async (id: number): Promise<Position> => {
-  const [position] = await db
-    .select()
-    .from(positions)
-    .where(eq(positions.id, id));
+  const allPositions: any = await db.select().from(positions);
+  const position = allPositions.find((pos: any) => pos.id === id);
 
   if (!position) {
     throw new PositionNotFoundError("Position not found");
   }
 
-  // Fetch all positions and build the hierarchy
-  const allPositions: any = await db.select().from(positions);
   const positionTree = buildHierarchy(allPositions, position.parentid);
-
-  // Ensure the requested position exists in the hierarchy
   const foundPosition = positionTree.find((pos) => pos.id === id);
+
   if (!foundPosition) {
     throw new PositionNotFoundError("Position not found in hierarchy");
   }
@@ -123,31 +110,20 @@ export const getPositionById = async (id: number): Promise<Position> => {
 };
 
 export const deletePosition = async (id: number) => {
-  const nodeToDelete = await db
-    .select({ id: positions.id, parentid: positions.parentid })
-    .from(positions)
-    .where(eq(positions.id, id))
-    .limit(1);
+  const allPositions = await db.select().from(positions);
+  const nodeToDelete = allPositions.find((pos) => pos.id === id);
 
-  if (!nodeToDelete.length) {
+  if (!nodeToDelete) {
     throw new PositionNotFoundError("Position not found");
   }
 
-  const { id: deletedId, parentid: deletedParentId } = nodeToDelete[0];
-
-  const children = await db
-    .select({ id: positions.id })
-    .from(positions)
-    .where(eq(positions.parentid, deletedId));
+  const { id: deletedId, parentid: deletedParentId } = nodeToDelete;
 
   // Update children's parentid if necessary
-  if (children.length > 0) {
-    const updateParentId = deletedParentId ?? null;
-    await db
-      .update(positions)
-      .set({ parentid: updateParentId })
-      .where(eq(positions.parentid, deletedId));
-  }
+  await db
+    .update(positions)
+    .set({ parentid: deletedParentId })
+    .where(eq(positions.parentid, deletedId));
 
   // Delete the position
   await db.delete(positions).where(eq(positions.id, deletedId));
