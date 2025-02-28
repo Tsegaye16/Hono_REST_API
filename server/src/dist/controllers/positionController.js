@@ -9,8 +9,22 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.searchPositionsHandler = exports.updatePositionHandler = exports.deletePositionHandler = exports.getPositionByIdHandler = exports.getHierarchyHandler = exports.createPositionHandler = void 0;
+exports.updatePositionHandler = exports.deletePositionHandler = exports.getPositionByIdHandler = exports.createPositionHandler = exports.getHierarchyHandler = void 0;
 const positionService_1 = require("../services/positionService");
+const getHierarchyHandler = (ctx) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
+    try {
+        const search = ctx.req.query("search") || undefined;
+        const limit = parseInt((_a = ctx.req.query("limit")) !== null && _a !== void 0 ? _a : "0", 10) || undefined;
+        const page = parseInt((_b = ctx.req.query("page")) !== null && _b !== void 0 ? _b : "0", 10) || undefined;
+        const positions = yield (0, positionService_1.getHierarchy)(search, limit, page);
+        return ctx.json(positions, 200);
+    }
+    catch (error) {
+        return ctx.json({ error: error.message }, 500);
+    }
+});
+exports.getHierarchyHandler = getHierarchyHandler;
 const createPositionHandler = (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, description, parentid } = yield ctx.req.json();
     // Validate input
@@ -26,16 +40,6 @@ const createPositionHandler = (ctx) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.createPositionHandler = createPositionHandler;
-const getHierarchyHandler = (ctx) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const positions = yield (0, positionService_1.getHierarchy)();
-        return ctx.json(positions, 200); // Explicitly set status code to 200
-    }
-    catch (error) {
-        return ctx.json({ error: error.message }, 500);
-    }
-});
-exports.getHierarchyHandler = getHierarchyHandler;
 const getPositionByIdHandler = (ctx) => __awaiter(void 0, void 0, void 0, function* () {
     const id = ctx.req.param("id");
     // Validate ID
@@ -86,18 +90,3 @@ const updatePositionHandler = (ctx) => __awaiter(void 0, void 0, void 0, functio
     }
 });
 exports.updatePositionHandler = updatePositionHandler;
-const searchPositionsHandler = (ctx) => __awaiter(void 0, void 0, void 0, function* () {
-    const query = ctx.req.query("q"); // Get search query parameter
-    if (!query || query.trim() === "") {
-        return ctx.json({ error: "Search query is required" }, 400);
-    }
-    try {
-        const results = yield (0, positionService_1.searchPositions)(query);
-        return ctx.json(results, 200);
-    }
-    catch (error) {
-        console.error("Error searching positions:", error);
-        return ctx.json({ error: error.message }, 500);
-    }
-});
-exports.searchPositionsHandler = searchPositionsHandler;

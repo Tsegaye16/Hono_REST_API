@@ -19,7 +19,7 @@ const positions_1 = require("../models/positions");
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const pool = new pg_1.Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.LOCAL_DATABASE_URL,
 });
 const db = (0, node_postgres_1.drizzle)(pool, { schema: { positions: positions_1.positions } });
 exports.db = db;

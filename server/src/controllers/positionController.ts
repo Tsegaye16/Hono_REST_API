@@ -5,9 +5,21 @@ import {
   getHierarchy,
   getPositionById,
   PositionNotFoundError,
-  searchPositions,
   updatePosition,
 } from "../services/positionService";
+
+export const getHierarchyHandler = async (ctx: Context) => {
+  try {
+    const search = ctx.req.query("search") || undefined;
+    const limit = parseInt(ctx.req.query("limit") ?? "0", 10) || undefined;
+    const page = parseInt(ctx.req.query("page") ?? "0", 10) || undefined;
+
+    const positions = await getHierarchy(search, limit, page);
+    return ctx.json(positions, 200);
+  } catch (error: any) {
+    return ctx.json({ error: error.message }, 500);
+  }
+};
 
 export const createPositionHandler = async (ctx: Context) => {
   const { name, description, parentid } = await ctx.req.json();
@@ -21,15 +33,6 @@ export const createPositionHandler = async (ctx: Context) => {
     const position = await createPosition(name, description, parentid);
 
     return ctx.json(position, 201); // 201 Created for successful resource creation
-  } catch (error: any) {
-    return ctx.json({ error: error.message }, 500);
-  }
-};
-
-export const getHierarchyHandler = async (ctx: Context) => {
-  try {
-    const positions = await getHierarchy();
-    return ctx.json(positions, 200); // Explicitly set status code to 200
   } catch (error: any) {
     return ctx.json({ error: error.message }, 500);
   }
@@ -82,22 +85,6 @@ export const updatePositionHandler = async (ctx: Context) => {
     const updatedPosition = await updatePosition(id, position);
     return ctx.json(updatedPosition);
   } catch (error: any) {
-    return ctx.json({ error: error.message }, 500);
-  }
-};
-
-export const searchPositionsHandler = async (ctx: Context) => {
-  const query = ctx.req.query("q"); // Get search query parameter
-
-  if (!query || query.trim() === "") {
-    return ctx.json({ error: "Search query is required" }, 400);
-  }
-
-  try {
-    const results = await searchPositions(query);
-    return ctx.json(results, 200);
-  } catch (error: any) {
-    console.error("Error searching positions:", error);
     return ctx.json({ error: error.message }, 500);
   }
 };

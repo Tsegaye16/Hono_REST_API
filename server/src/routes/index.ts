@@ -5,7 +5,6 @@ import {
   deletePositionHandler,
   getHierarchyHandler,
   getPositionByIdHandler,
-  searchPositionsHandler,
   updatePositionHandler,
 } from "../controllers/positionController";
 
@@ -19,31 +18,23 @@ const PositionSchema = z.object({
   parentid: z.number().nullable(),
 });
 
-// Search Positions
-const searchRoute = createRoute({
+// Get Hierarchy with optional search, limit, and page parameters
+const getHierarchyRoute = createRoute({
   method: "get",
-  path: "/positions/search",
+  path: "/positions",
   request: {
     query: z.object({
-      q: z.string().min(1, "Search query is required"),
+      search: z.string().optional(),
+      limit: z.string().optional(),
+      page: z.string().optional(),
     }),
   },
   responses: {
     200: {
-      description: "List of positions matching the search query",
+      description: "List of positions in hierarchy",
       content: {
         "application/json": {
           schema: z.array(PositionSchema),
-        },
-      },
-    },
-    400: {
-      description: "Bad Request - Search query is required",
-      content: {
-        "application/json": {
-          schema: z.object({
-            error: z.string(),
-          }),
         },
       },
     },
@@ -59,10 +50,10 @@ const searchRoute = createRoute({
     },
   },
 });
-route.openapi(searchRoute, searchPositionsHandler);
+route.openapi(getHierarchyRoute, getHierarchyHandler);
 
 // Create Position
-const createRouteSpec = createRoute({
+const createHierarchyRoute = createRoute({
   method: "post",
   path: "/positions",
   request: {
@@ -92,34 +83,7 @@ const createRouteSpec = createRoute({
     },
   },
 });
-route.openapi(createRouteSpec, createPositionHandler);
-
-// Get Hierarchy
-const hierarchyRoute = createRoute({
-  method: "get",
-  path: "/positions",
-  responses: {
-    200: {
-      description: "List of positions in hierarchy",
-      content: {
-        "application/json": {
-          schema: z.array(PositionSchema),
-        },
-      },
-    },
-    500: {
-      description: "Internal Server Error",
-      content: {
-        "application/json": {
-          schema: z.object({
-            error: z.string(),
-          }),
-        },
-      },
-    },
-  },
-});
-route.openapi(hierarchyRoute, getHierarchyHandler);
+route.openapi(createHierarchyRoute, createPositionHandler);
 
 // Get Position by ID
 const getByIdRoute = createRoute({
