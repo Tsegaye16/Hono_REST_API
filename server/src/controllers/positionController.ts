@@ -15,7 +15,12 @@ export const getHierarchyHandler = async (ctx: Context) => {
     const page = parseInt(ctx.req.query("page") ?? "0", 10) || undefined;
 
     const positions = await getHierarchy(search, limit, page);
-    return ctx.json(positions, 200);
+
+    const formattedPositions = positions.map((position) => ({
+      ...position,
+      parentid: position.parentid ?? null,
+    }));
+    return ctx.json(formattedPositions, 200);
   } catch (error: any) {
     return ctx.json({ error: error.message }, 500);
   }
@@ -39,20 +44,21 @@ export const createPositionHandler = async (ctx: Context) => {
 };
 
 export const getPositionByIdHandler = async (ctx: Context) => {
-  const id = ctx.req.param("id");
-
+  const idParam = ctx.req.param("id");
+  const id = parseInt(idParam, 10);
+  console.log(id);
   // Validate ID
-  if (!id || isNaN(parseInt(id, 10))) {
+  if (!idParam || isNaN(id)) {
     return ctx.json({ error: "Invalid ID" }, 400);
   }
 
   try {
-    const position = await getPositionById(parseInt(id, 10));
-    if (!position) {
-      return ctx.json({ error: "Position not found" }, 404);
-    }
+    const position = await getPositionById(id);
     return ctx.json(position);
   } catch (error: any) {
+    if (error instanceof PositionNotFoundError) {
+      return ctx.json({ error: error.message }, 404);
+    }
     return ctx.json({ error: error.message }, 500);
   }
 };
