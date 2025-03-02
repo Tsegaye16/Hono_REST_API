@@ -1,13 +1,13 @@
 import { db } from "../db/config";
-import { eq, like } from "drizzle-orm";
+import { eq, like, sql } from "drizzle-orm";
 import { positions } from "../models/positions";
 
 interface Position {
   id: number;
   name: string;
   description: string;
-  parentid: number | null;
-  children: Position[];
+  parentid?: number;
+  children?: Position[];
 }
 
 export class PositionNotFoundError extends Error {
@@ -18,28 +18,11 @@ export class PositionNotFoundError extends Error {
 }
 
 // Helper function to build the hierarchy
-const buildHierarchy = (
-  allPositions: Position[],
-  rootId: number | null = null
-): Position[] => {
-  const positionMap = new Map<number, Position>();
-
+const buildHierarchy = (allPositions: Position[]) => {
   allPositions.forEach((position) => {
-    positionMap.set(position.id, { ...position, children: [] });
+    position.children = allPositions.filter((p) => p.parentid === position.id);
   });
-
-  allPositions.forEach((position) => {
-    if (position.parentid !== null) {
-      const parent = positionMap.get(position.parentid);
-      if (parent) {
-        parent.children.push(positionMap.get(position.id)!);
-      }
-    }
-  });
-
-  return allPositions
-    .filter((position) => position.parentid === rootId)
-    .map((root) => positionMap.get(root.id)!);
+  return allPositions;
 };
 
 export const getHierarchy = async (
@@ -47,33 +30,19 @@ export const getHierarchy = async (
   limit?: number,
   page?: number
 ): Promise<Position[]> => {
-  const allPositions: any = await db.select().from(positions);
+  let allPositions: any = await db.select().from(positions);
 
   if (search) {
-    const matchingPositions = allPositions.filter((pos: any) =>
-      pos.name.includes(search)
-    );
-
-    if (matchingPositions.length === 0) {
-      return [];
-    }
-
-    const positionTrees = matchingPositions.map((pos: Position) => {
-      const positionTree = buildHierarchy(allPositions, pos.parentid);
-      return positionTree.find((position) => position.id === pos.id);
-    });
-
-    return positionTrees.filter(
-      (position: Position[]) => position !== undefined
-    ) as Position[];
+    allPositions = allPositions.filter((pos: any) => pos.name.includes(search));
   }
 
   const paginatedPositions =
     limit && page
       ? allPositions.slice((page - 1) * limit, page * limit)
       : allPositions;
+  const hierarchy = buildHierarchy(paginatedPositions);
 
-  return buildHierarchy(paginatedPositions) as Position[];
+  return hierarchy.filter((position) => position.parentid === null);
 };
 
 export const createPosition = async (
@@ -92,21 +61,32 @@ export const createPosition = async (
 };
 
 export const getPositionById = async (id: number): Promise<Position> => {
-  const allPositions: any = await db.select().from(positions);
-  const position = allPositions.find((pos: any) => pos.id === id);
+  const allPositions: any = await db.execute(sql`
+      WITH RECURSIVE hierarchy AS (
+        SELECT id, name, description, parentid FROM positions WHERE id = ${id}
+        UNION ALL
+        SELECT p.id, p.name, p.description, p.parentid FROM positions p
+        INNER JOIN hierarchy h ON p.parentid = h.id
+      )
+      SELECT * FROM hierarchy;
+    `);
+  const positions = allPositions.rows;
 
-  if (!position) {
+  if (!positions.length) {
     throw new PositionNotFoundError("Position not found");
   }
 
-  const positionTree = buildHierarchy(allPositions, position.parentid);
-  const foundPosition = positionTree.find((pos) => pos.id === id);
+  // Build the hierarchy
+  const hierarchy = buildHierarchy(positions);
 
-  if (!foundPosition) {
-    throw new PositionNotFoundError("Position not found in hierarchy");
+  // Find the root position (the one with the given id)
+  const rootPosition = hierarchy.find((p) => p.id === id);
+
+  if (!rootPosition) {
+    throw new PositionNotFoundError("Root position not found in hierarchy");
   }
 
-  return foundPosition;
+  return rootPosition;
 };
 
 export const deletePosition = async (id: number) => {
@@ -132,7 +112,7 @@ export const deletePosition = async (id: number) => {
 
 export const updatePosition = async (
   id: number,
-  data: { name?: string; description?: string; parentid?: number | null }
+  data: { name?: string; description?: string; parentid: number | null }
 ) => {
   return db.update(positions).set(data).where(eq(positions.id, id)).returning();
 };

@@ -40,9 +40,9 @@ app.doc("/doc", {
 });
 
 // Swagger UI
-app.get("/ui", swaggerUI({ url: "/doc" }));
+app.get("/documentation", swaggerUI({ url: "/doc" }));
 
-const port = 4001;
+const port = parseInt(process.env.PORT!) || 4001;
 console.log(`Server is running on port ${port}`);
 
 serve({
